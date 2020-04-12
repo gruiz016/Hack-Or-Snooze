@@ -36,6 +36,7 @@ const $userFavStories = $("#favorited-articles");
   makeHTMLStory(storyList, $allArticleList);
 
   checkIfLoggedIn();
+  $("#user-profile").hide();
 })();
 
 async function checkIfLoggedIn() {
@@ -118,6 +119,8 @@ async function createUser() {
   setLocalStorage();
   populateProfileInfo();
   $userNav.toggleClass("hidden");
+  userProfle();
+  $("#user-profile").hide();
 }
 
 async function login() {
@@ -237,9 +240,9 @@ const setLocalStorage = () => {
 };
 
 const toggleLoginCreateForm = () => {
-  $allArticleList.toggleClass("hidden");
-  $loginForm.toggleClass("hidden");
-  $createAccount.toggleClass("hidden");
+  $allArticleList.hide();
+  $loginForm.show();
+  $createAccount.show();
 };
 
 const getHostName = (url) => {
@@ -255,20 +258,32 @@ const getHostName = (url) => {
   return hostName;
 };
 
-//Event Handlers
+const hide = () => {
+  const arr = [
+    $userStories,
+    $userFavStories,
+    $submitForm,
+    $("#user-profile"),
+    $loginForm,
+    $createAccount,
+  ];
+  arr.forEach((a) => a.hide());
+};
 
-$createAccount.on("submit", async (evt) => {
+//Event Handlers - that toggle sections
+
+$brand.on("click", (evt) => {
   evt.preventDefault();
-  await createUser();
-  toggleLoginCreateForm();
-  $logout.toggleClass("hidden");
+  hide();
+  $allArticleList.show();
 });
 
-$loginForm.on("submit", async (evt) => {
+$("#nav-welcome").on("click", (evt) => {
   evt.preventDefault();
-  await login();
-  toggleLoginCreateForm();
-  $logout.toggleClass("hidden");
+  hide();
+  populateProfileInfo();
+  $allArticleList.hide();
+  $("#user-profile").show();
 });
 
 $navLogin.on("click", (evt) => {
@@ -276,15 +291,35 @@ $navLogin.on("click", (evt) => {
   toggleLoginCreateForm();
 });
 
+$navSubmit.on("click", (evt) => {
+  evt.preventDefault();
+  hide();
+  $allArticleList.show();
+  $submitForm.show();
+});
+
+//Event handlers that manipulate the DOM
+
 $logout.on("click", (evt) => {
   evt.preventDefault();
   localStorage.clear();
   location.reload();
 });
 
-$navSubmit.on("click", (evt) => {
+$loginForm.on("submit", async (evt) => {
   evt.preventDefault();
-  $submitForm.toggleClass("hidden");
+  $allArticleList.show();
+  hide();
+  $logout.toggleClass("hidden");
+  await login();
+});
+
+$createAccount.on("submit", async (evt) => {
+  evt.preventDefault();
+  $allArticleList.show();
+  hide();
+  $logout.toggleClass("hidden");
+  await createUser();
 });
 
 $submitForm.on("submit", async (evt) => {
@@ -294,9 +329,23 @@ $submitForm.on("submit", async (evt) => {
 
 $navStories.on("click", async (evt) => {
   evt.preventDefault();
-  $allArticleList.toggleClass("hidden");
-  $userStories.toggleClass("hidden");
-  getUserStories();
+  hide();
+  $allArticleList.hide();
+  $userStories.show();
+  await getUserStories();
+});
+
+$userFavLink.on("click", async (evt) => {
+  evt.preventDefault();
+  hide();
+  $allArticleList.hide();
+  $userFavStories.show();
+  const userFavs = await getUserFavs();
+  if (userFavs.length === 0) {
+    $userFavStories.html('<p class="lead">Nothing here..</p>');
+  } else {
+    await makeHTMLStory(userFavs, $userFavStories);
+  }
 });
 
 $body.on("click", ".trash-can", async (evt) => {
@@ -307,49 +356,17 @@ $body.on("click", ".trash-can", async (evt) => {
     url: `${API}/stories/${id}`,
     data: { token: tkn },
   });
-  getUserStories();
-  displayCurrentStories();
+  await getUserStories();
+  await displayCurrentStories();
 });
 
-$userFavLink.on("click", async (evt) => {
-  evt.preventDefault();
-  $allArticleList.toggleClass("hidden");
-  $userFavStories.toggleClass("hidden");
-  const userFavs = await getUserFavs();
-  if (userFavs.length === 0) {
-    $userFavStories.html('<p class="lead">Nothing here..</p>');
-  } else {
-    makeHTMLStory(userFavs, $userFavStories);
-  }
-});
-
-//fix this logic !! favorites are not behaving correctly!!
 $body.on("click", ".star", async (evt) => {
   const id = $(evt.target).closest("li").attr("id");
   let userFavs = await getUserFavs();
-
-  if (userFavs.length === 0) {
-    toggleUserFavorites(id, "POST");
-  } else {
-    for (let story of userFavs) {
-      if (story.storyId === id) {
-        toggleUserFavorites(id, "DELETE");
-      } else {
-        toggleUserFavorites(id, "POST");
-      }
+  await toggleUserFavorites(id, "POST");
+  userFavs.forEach(async (favs) => {
+    if (favs.storyId === id) {
+      await toggleUserFavorites(id, "DELETE");
     }
-  }
-});
-
-$brand.on("click", (evt) => {
-  evt.preventDefault();
-  $allArticleList.show();
-  $("#user-profile").hide();
-});
-
-$("#nav-welcome").on("click", (evt) => {
-  evt.preventDefault();
-  populateProfileInfo();
-  $allArticleList.hide();
-  $("#user-profile").show();
+  });
 });
