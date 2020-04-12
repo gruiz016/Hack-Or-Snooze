@@ -26,6 +26,7 @@ const $userFavStories = $("#favorited-articles");
 
 //MAIN APP LOGIC
 
+// gets stories as soon as the page loads
 (async function getStories() {
   const response = await axios.get(`${API}/stories`, {
     params: { skip: 0, limit: 20 },
@@ -39,6 +40,7 @@ const $userFavStories = $("#favorited-articles");
   $("#user-profile").hide();
 })();
 
+//checks if user has localstorage data, so on refresh or closing tab the data presists
 async function checkIfLoggedIn() {
   const name = localStorage.getItem("username");
   const tkn = localStorage.getItem("token");
@@ -52,6 +54,7 @@ async function checkIfLoggedIn() {
   $userNav.toggleClass("hidden");
 }
 
+//displays recent stories, call this after a deletion
 async function displayCurrentStories() {
   const response = await axios.get(`${API}/stories`, {
     params: { skip: 0, limit: 20 },
@@ -62,6 +65,7 @@ async function displayCurrentStories() {
   makeHTMLStory(storyList, $allArticleList);
 }
 
+//retries user stories
 async function getUserStories() {
   const name = localStorage.getItem("username");
   const tkn = localStorage.getItem("token");
@@ -86,6 +90,7 @@ async function getUserStories() {
   );
 }
 
+//gathers the user favorite stories
 async function getUserFavs() {
   const username = localStorage.getItem("username");
   const tkn = localStorage.getItem("token");
@@ -96,6 +101,7 @@ async function getUserFavs() {
   return userFavs;
 }
 
+//methos that toggles either add or remove a favorite
 async function toggleUserFavorites(id, method) {
   const username = localStorage.getItem("username");
   const tkn = localStorage.getItem("token");
@@ -106,6 +112,7 @@ async function toggleUserFavorites(id, method) {
   });
 }
 
+//creates a user
 async function createUser() {
   let userData = getValuesSignUp();
   const response = await axios.post(`${API}/signup`, {
@@ -123,6 +130,7 @@ async function createUser() {
   $("#user-profile").hide();
 }
 
+//logins a user in
 async function login() {
   const userData = getValuesLogin();
   const response = await axios.post(`${API}/login`, {
@@ -136,6 +144,7 @@ async function login() {
   $("#user-profile").hide();
 }
 
+//Adds a story
 async function postStory() {
   const userData = getSubmitValues();
   const tkn = localStorage.getItem("token");
@@ -155,13 +164,7 @@ async function postStory() {
 
 //Helper Functions
 
-const userProfle = () => {
-  const username = localStorage.getItem("username");
-  $("#nav-welcome").show();
-  $("#nav-user-profile").text(`${username}`);
-  $("#nav-login").hide();
-};
-
+//Makes the HTML structure for each story, dynamically
 const makeHTMLStory = (storyList, DOMAppendElement, icon = "") => {
   DOMAppendElement.text("");
   for (let story of storyList) {
@@ -182,6 +185,7 @@ const makeHTMLStory = (storyList, DOMAppendElement, icon = "") => {
   }
 };
 
+//creates and displays user data
 const populateProfileInfo = () => {
   const profile = $("#user-profile");
   const created = localStorage.getItem("createdAt");
@@ -201,12 +205,7 @@ const populateProfileInfo = () => {
   profile.html($item);
 };
 
-const clearSubmitValues = () => {
-  $("#author").val("");
-  $("#title").val("");
-  $("#url").val("");
-};
-
+//gathers values from signup form
 const getValuesSignUp = () => {
   const name = $("#create-account-name").val();
   const username = $("#create-account-username").val();
@@ -215,6 +214,7 @@ const getValuesSignUp = () => {
   return userData;
 };
 
+//gathers values from login form
 const getValuesLogin = () => {
   const username = $("#login-username").val();
   const password = $("#login-password").val();
@@ -222,6 +222,7 @@ const getValuesLogin = () => {
   return userData;
 };
 
+//gathers values from submit form
 const getSubmitValues = () => {
   const author = $("#author").val();
   const title = $("#title").val();
@@ -230,6 +231,14 @@ const getSubmitValues = () => {
   return userData;
 };
 
+//clears submit form
+const clearSubmitValues = () => {
+  $("#author").val("");
+  $("#title").val("");
+  $("#url").val("");
+};
+
+//sets the local storage
 const setLocalStorage = () => {
   if (user) {
     localStorage.setItem("token", user.token);
@@ -239,12 +248,14 @@ const setLocalStorage = () => {
   }
 };
 
+//hide/show login
 const toggleLoginCreateForm = () => {
   $allArticleList.hide();
   $loginForm.show();
   $createAccount.show();
 };
 
+//removes string elements from url
 const getHostName = (url) => {
   let hostName;
   if (url.indexOf("://") > -1) {
@@ -258,6 +269,7 @@ const getHostName = (url) => {
   return hostName;
 };
 
+//hides elements when toggling
 const hide = () => {
   const arr = [
     $userStories,
@@ -271,6 +283,13 @@ const hide = () => {
 };
 
 //Event Handlers - that toggle sections
+
+const userProfle = () => {
+  const username = localStorage.getItem("username");
+  $("#nav-welcome").show();
+  $("#nav-user-profile").text(`${username}`);
+  $("#nav-login").hide();
+};
 
 $brand.on("click", (evt) => {
   evt.preventDefault();
