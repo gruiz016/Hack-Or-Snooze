@@ -165,14 +165,14 @@ async function postStory() {
 //Helper Functions
 
 //Makes the HTML structure for each story, dynamically
-const makeHTMLStory = (storyList, DOMAppendElement, icon = "") => {
+const makeHTMLStory = (storyList, DOMAppendElement, icon = "", fav = "far") => {
   DOMAppendElement.text("");
   for (let story of storyList) {
     let hostName = getHostName(story.url);
     const $item = $(`<li id="${story.storyId}" class="${story.storyId}">
                       ${icon}
                       <span class="star">
-                      <i class="far fa-star"></i>
+                      <i class="${fav} fa-star"></i>
                       </span>
                       <a href="${story.url}" class="article-link">
                         <strong>${story.title}</strong>
@@ -283,20 +283,21 @@ const hide = () => {
 };
 
 //Event Handlers - that toggle sections
-
+//Toggle user profile nav bar, show hidden links
 const userProfle = () => {
   const username = localStorage.getItem("username");
   $("#nav-welcome").show();
   $("#nav-user-profile").text(`${username}`);
   $("#nav-login").hide();
 };
-
-$brand.on("click", (evt) => {
+//Toggling to live feed
+$brand.on("click", async (evt) => {
   evt.preventDefault();
   hide();
   $allArticleList.show();
+  await displayCurrentStories();
 });
-
+//Display User profile information on bottom screen
 $("#nav-welcome").on("click", (evt) => {
   evt.preventDefault();
   hide();
@@ -304,12 +305,12 @@ $("#nav-welcome").on("click", (evt) => {
   $allArticleList.hide();
   $("#user-profile").show();
 });
-
+//Toggle login form
 $navLogin.on("click", (evt) => {
   evt.preventDefault();
   toggleLoginCreateForm();
 });
-
+//Toggle create story form
 $navSubmit.on("click", (evt) => {
   evt.preventDefault();
   hide();
@@ -318,13 +319,13 @@ $navSubmit.on("click", (evt) => {
 });
 
 //Event handlers that manipulate the DOM
-
+//Logout
 $logout.on("click", (evt) => {
   evt.preventDefault();
   localStorage.clear();
   location.reload();
 });
-
+//Login in
 $loginForm.on("submit", async (evt) => {
   evt.preventDefault();
   $allArticleList.show();
@@ -332,7 +333,7 @@ $loginForm.on("submit", async (evt) => {
   $logout.toggleClass("hidden");
   await login();
 });
-
+//Create Account
 $createAccount.on("submit", async (evt) => {
   evt.preventDefault();
   $allArticleList.show();
@@ -340,12 +341,12 @@ $createAccount.on("submit", async (evt) => {
   $logout.toggleClass("hidden");
   await createUser();
 });
-
+//Submit Form
 $submitForm.on("submit", async (evt) => {
   evt.preventDefault();
   await postStory();
 });
-
+//User Stories
 $navStories.on("click", async (evt) => {
   evt.preventDefault();
   hide();
@@ -353,7 +354,16 @@ $navStories.on("click", async (evt) => {
   $userStories.show();
   await getUserStories();
 });
-
+//Fav Icon Toggle
+const toggleFavIcon = (evt, bool) => {
+  if (bool) {
+    $(evt.target).toggleClass("far");
+    $(evt.target).toggleClass("fas");
+  }
+  $(evt.target).remove("fas");
+  $(evt.target).add("far");
+};
+//User Fav's
 $userFavLink.on("click", async (evt) => {
   evt.preventDefault();
   hide();
@@ -363,10 +373,10 @@ $userFavLink.on("click", async (evt) => {
   if (userFavs.length === 0) {
     $userFavStories.html('<p class="lead">Nothing here..</p>');
   } else {
-    await makeHTMLStory(userFavs, $userFavStories);
+    await makeHTMLStory(userFavs, $userFavStories, "", "fas");
   }
 });
-
+//Click logic for trash can icon - Deleting Stories
 $body.on("click", ".trash-can", async (evt) => {
   const tkn = localStorage.getItem("token");
   const id = $(evt.target).closest("li").attr("id");
@@ -378,14 +388,16 @@ $body.on("click", ".trash-can", async (evt) => {
   await getUserStories();
   await displayCurrentStories();
 });
-
+//Click logic for Star icon - Fav-ing a story
 $body.on("click", ".star", async (evt) => {
   const id = $(evt.target).closest("li").attr("id");
   let userFavs = await getUserFavs();
   await toggleUserFavorites(id, "POST");
+  toggleFavIcon(evt, true);
   userFavs.forEach(async (favs) => {
     if (favs.storyId === id) {
       await toggleUserFavorites(id, "DELETE");
+      toggleFavIcon(evt, false);
     }
   });
 });
